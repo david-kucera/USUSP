@@ -23,6 +23,11 @@ print(v7_complete.isnull().sum())
 # matrix completion algorithm
 # 1 - create a complete data matrix
 #       - missing values = mean of column
+
+v7_missing.fillna(v7_missing.mean(), inplace=True)
+print(v7_missing.describe())
+print(v7_complete.isnull().sum())
+
 # 2 - optimize iteratively
 #       - solve PCA (12.13)
 #       - update missing values
