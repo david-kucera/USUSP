@@ -1,0 +1,14 @@
+# NOTES FROM ISL book
+# we could replace missing values by column means...
+# we need to do it using PCA -- MATRIX COMPLETION
+# -- appropriate if the missingness is random (--- true in our case)
+# -- could be used in recommender systems
+
+# matrix completion algorithm
+# 1 - create a complete data matrix
+#       - missing values = mean of column
+# 2 - optimize iteratively
+#       - solve PCA (12.13)
+#       - update missing values
+#       - check the objective (12.14) - stop when error stops decreasing significantly
+# 3 - return the completed matrix with updated missing values
