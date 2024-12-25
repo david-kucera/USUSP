@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
 
 
 def load_data():
@@ -8,6 +9,21 @@ def load_data():
     v7_missing = pd.read_csv('data/v7_missing.csv')
     v7_complete = pd.read_csv('data/v7_complete.csv')
     return v7_missing, v7_complete
+
+
+def plot_data(data, title, missing_mask=None):
+    """Plot a heatmap of the data."""
+    plt.figure(figsize=(10, 6))
+    if missing_mask is not None:
+        # Highlight missing values if a mask is provided
+        data = data.copy()
+        data[missing_mask] = np.nan  # Ensure missing values are visible
+    plt.imshow(data, aspect='auto', cmap='viridis')
+    plt.colorbar(label='Value')
+    plt.title(title)
+    plt.xlabel('Features')
+    plt.ylabel('Samples')
+    plt.show()
 
 
 def describe_data(v7_missing, v7_complete):
@@ -132,6 +148,7 @@ def main():
 
     # Load data
     v7_missing, v7_complete = load_data()
+    #plot_data(v7_missing, "Original Data with Missing Values", missing_mask=v7_missing.isnull())
 
     # # Describe data
     # describe_data(v7_missing, v7_complete)
@@ -147,13 +164,14 @@ def main():
 
     # Standardize data
     v7_standardized = (v7_imputed_mean - v7_imputed_mean.mean()) / v7_imputed_mean.std()
+    #plot_data(v7_standardized, "Standardized Data")
 
     # Impute missing values with PCA
     #v7_imputed_pca = pca_imputation_sklearn(v7_standardized, missing_mask, n_components=6)
     v7_imputed_pca = pca_imputation_moja(v7_standardized, missing_mask, n_components=6)
-
     # De-standardize back to original scale
     v7_imputed_pca = v7_imputed_pca * v7_imputed_mean.std() + v7_imputed_mean.mean()
+    #plot_data(v7_imputed_pca, "Imputed Data using PCA")
 
     # print("After imputing missing values with PCA:")
     # print(v7_imputed_pca.describe())
@@ -175,6 +193,11 @@ def main():
 
     print("Difference MAE ... MEAN - PCA:", mae_mean - mae_pca)
     print("Difference RMSE ... MEAN - PCA:", rmse_mean - rmse_pca)
+
+    # TODO do dokumentacie nejake plots, popis, ako sa standardizovalo, atd
+
+    print(v7_missing.describe())
+    print(v7_imputed_pca.describe())
 
 
 if __name__ == "__main__":
