@@ -47,18 +47,8 @@ def calculate_metrics(original_vals, imputed_vals):
     return mae, rmse
 
 
-def pca_imputation(data, missing_mask, n_components=None, max_iter=10, tol=1e-4):
-    """
-    Impute missing values using PCA.
-    Parameters:
-        data (DataFrame): Dataset with missing values imputed by column mean.
-        missing_mask (DataFrame): Boolean mask indicating missing values.
-        n_components (int): Number of PCA components to retain (default: all).
-        max_iter (int): Maximum number of iterations.
-        tol (float): Tolerance for stopping criterion based on error change.
-    Returns:
-        imputed_data (DataFrame): Dataset with missing values imputed using PCA.
-    """
+def pca_imputation_sklearn(data, missing_mask, n_components=None, max_iter=10, tol=1e-4):
+    """Impute missing values using PCA."""
     data = data.copy()
     last_error = None
 
@@ -84,6 +74,59 @@ def pca_imputation(data, missing_mask, n_components=None, max_iter=10, tol=1e-4)
     return data
 
 
+def pca_imputation_moja(data, missing_mask, n_components=None, max_iter=10, tol=1e-4):
+    """Impute missing values using PCA."""
+    data = data.copy()
+    last_error = None
+
+    for iteration in range(max_iter):
+        # Perform custom PCA
+        _, reconstructed = pca_moja(data.values, n_components=n_components)
+
+        # Update missing values using the reconstructed matrix
+        data.values[missing_mask] = reconstructed[missing_mask]
+
+        # Calculate reconstruction error
+        error = np.linalg.norm(data.values - reconstructed, ord='fro')
+        if last_error is not None and abs(last_error - error) < tol:
+            print(f"PCA Imputation converged after {iteration + 1} iterations.")
+            break
+        last_error = error
+
+    return data
+
+
+def pca_moja(data, n_components=None):
+    """Implementation of PCA using NumPy."""
+    # Center the data (subtract mean)
+    mean = np.mean(data, axis=0)
+    centered_data = data - mean
+
+    # Compute covariance matrix
+    covariance_matrix = np.cov(centered_data, rowvar=False)
+
+    # Perform eigen decomposition
+    eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
+
+    # Sort eigenvalues and eigenvectors in descending order
+    sorted_indices = np.argsort(eigenvalues)[::-1]
+    eigenvalues = eigenvalues[sorted_indices]
+    eigenvectors = eigenvectors[:, sorted_indices]
+
+    # Retain only the top n_components
+    if n_components is not None:
+        eigenvectors = eigenvectors[:, :n_components]
+
+    # Project the data onto the principal components
+    transformed = np.dot(centered_data, eigenvectors)
+
+    # Reconstruct the data
+    reconstructed = np.dot(transformed, eigenvectors.T) + mean
+
+    return transformed, reconstructed
+
+
+
 def main():
     print("Semestrálna práca z USU")
     print("Data imputation using PCA")
@@ -103,10 +146,18 @@ def main():
     # print("After imputing missing values with column means:")
     # print(v7_missing_imputed_mean.describe())
 
+    # Standardize data
+    v7_standardized = (v7_imputed_mean - v7_imputed_mean.mean()) / v7_imputed_mean.std()
+
     # Impute missing values with PCA
-    v7_imputed_pca = pca_imputation(v7_imputed_mean, missing_mask)
-    print("After imputing missing values with PCA:")
-    print(v7_imputed_pca.describe())
+    #v7_imputed_pca = pca_imputation_sklearn(v7_standardized, missing_mask, n_components=6)
+    v7_imputed_pca = pca_imputation_moja(v7_standardized, missing_mask, n_components=6)
+
+    # De-standardize back to original scale
+    v7_imputed_pca = v7_imputed_pca * v7_imputed_mean.std() + v7_imputed_mean.mean()
+
+    # print("After imputing missing values with PCA:")
+    # print(v7_imputed_pca.describe())
 
     # Extract original and imputed values
     original_vals_mean, imputed_vals_mean = extract_original_and_imputed_values(v7_complete, v7_imputed_mean, missing_mask)
