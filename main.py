@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 from sklearn.decomposition import PCA
 
 
@@ -42,8 +41,8 @@ def impute_missing_values(v7_missing):
 
 def calculate_metrics(original_vals, imputed_vals):
     """Calculate and return MAE and RMSE metrics."""
-    mae = mean_absolute_error(original_vals, imputed_vals)
-    rmse = root_mean_squared_error(original_vals, imputed_vals)
+    mae = np.mean(np.abs(original_vals - imputed_vals))
+    rmse = np.sqrt(np.mean((original_vals - imputed_vals) ** 2))
     return mae, rmse
 
 
