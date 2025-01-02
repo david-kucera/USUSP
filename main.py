@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from pca import PCA, PCA_Impute
+from pca import PCA_Impute
 # from pca_sklearn import PCA_Impute
 
 from metrics import MAE, RMSE
@@ -9,9 +9,9 @@ from plot import plot_mae, plot_rmse
 
 
 def load_data():
-    """Load datasets."""
-    v7_missing = pd.read_csv('data/v7_missing.csv')
-    v7_complete = pd.read_csv('data/v7_complete.csv')
+    """Load datasets and drop the first column."""
+    v7_missing = pd.read_csv('data/v7_missing.csv').iloc[:, 1:]
+    v7_complete = pd.read_csv('data/v7_complete.csv').iloc[:, 1:]
     return v7_missing, v7_complete
 
 
@@ -71,6 +71,10 @@ def main(component_count=None):
     # De-standardize back to original scale
     v7_imputed_pca = v7_imputed_pca * v7_imputed_mean.std() + v7_imputed_mean.mean()
 
+    # Save to file
+    v7_imputed_pca.to_csv('data/v7_imputed_pca.csv')
+    v7_imputed_mean.to_csv('data/v7_imputed_mean.csv')
+
     # Extract original and imputed values
     original_vals, imputed_vals_mean = extract_original_and_imputed_values(v7_complete, v7_imputed_mean, missing_mask)
     _, imputed_vals_pca = extract_original_and_imputed_values(v7_complete, v7_imputed_pca, missing_mask)
@@ -78,18 +82,19 @@ def main(component_count=None):
     # Calculate metrics
     mae_mean, rmse_mean = calculate_metrics(original_vals, imputed_vals_mean)
     mae_pca, rmse_pca = calculate_metrics(original_vals, imputed_vals_pca)
-    # print("Imputing missing values with MEAN:")
-    # print("Mean Absolute Error:", mae_mean)
-    # print("Root Mean Squared Error:", rmse_mean)
+    print("Imputing missing values with MEAN:")
+    print("Mean Absolute Error:", mae_mean)
+    print("Root Mean Squared Error:", rmse_mean)
 
-    # print("Imputing missing values with PCA:")
-    # print("Mean Absolute Error:", mae_pca)
-    # print("Root Mean Squared Error:", rmse_pca)
+    print("Imputing missing values with PCA:")
+    print("Mean Absolute Error:", mae_pca)
+    print("Root Mean Squared Error:", rmse_pca)
 
     diff_mae = mae_mean - mae_pca
     diff_rmse = rmse_mean - rmse_pca
     print("Difference MAE ... MEAN - PCA:", diff_mae)
     print("Difference RMSE ... MEAN - PCA:", diff_rmse)
+    # return mae_pca, rmse_pca
     return diff_mae, diff_rmse
 
 
@@ -107,5 +112,9 @@ def experiment_components():
 
 
 if __name__ == "__main__":
-    main(6)
-    # experiment_components()
+    try :
+        np.random.seed(42)
+        main(5)
+        # experiment_components()
+    except Exception as e :
+        print(e)
